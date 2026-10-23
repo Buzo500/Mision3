@@ -1,5 +1,6 @@
 import Cabecera from "./components/Cabecera.jsx";
 import Portada from "./components/Portada.jsx";
+import ExploradorRecetas from "./components/ExploradorRecetas.jsx";
 import Filosofia from "./components/Filosofia.jsx";
 import Pie from "./components/Pie.jsx";
 
@@ -10,11 +11,7 @@ export default function App() {
       <Cabecera />
       <main id="contenido">
         <Portada />
-        <section id="explorador" className="explorador contenedor" aria-labelledby="titulo-explorador">
-          <p className="antetitulo">01 / El recetario</p>
-          <h2 id="titulo-explorador">¿Dónde te lleva el <em>hambre?</em></h2>
-          <p>Encuentra inspiración para tu próxima comida.</p>
-        </section>
+        <ExploradorRecetas />
         <Filosofia />
       </main>
       <Pie />
