@@ -1,0 +1,8 @@
+node_modules/
+dist/
+tmp/
+output/
+*.log
+.DS_Store
+# La misión anterior se conserva como referencia local.
+Mision2-Plantilla/
