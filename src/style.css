@@ -383,6 +383,11 @@ h3 { margin: 12px 0 7px; font-size: 26px; letter-spacing: -0.5px; }
 .boton-favorita span { font-size: 19px; line-height: 1; }
 .boton-favorita:hover, .boton-favorita[aria-pressed="true"] { color: #91482f; background: #efe8dd; border-color: #b3886b; }
 .zona-resultados > .detalle { margin: 0 0 36px; padding: 24px; background: #fcfcf8; }
+.vistas-recetario { display: flex; flex-wrap: wrap; gap: 10px; margin: 24px 0; }
+.vistas-recetario button { padding: 12px 18px; border: 1px solid #87927c; border-radius: 2px; color: #293c30; background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
+.vistas-recetario button:hover { background: #e9ebdf; }
+.vistas-recetario button[aria-pressed="true"] { color: #fcfcf8; background: #293c30; }
+.aviso-favoritas { margin: 0 0 24px; padding: 16px; color: #78563f; background: #efe8dd; font-size: 13px; line-height: 1.6; }
 
 @media (max-width: 1100px) {
   .nota-cabecera { display: none; }
@@ -402,7 +407,7 @@ h3 { margin: 12px 0 7px; font-size: 26px; letter-spacing: -0.5px; }
   .introduccion { margin-top: 24px; font-size: 16px; }
   .nota-portada { margin-top: 26px; }
   .portada-foto img { height: 390px; }
-  .sello-foto { right: -10px; width: 116px; height: 116px; }
+  .sello-foto { right: 0; width: 116px; height: 116px; }
   .sello-foto .sello-centro { font-size: 21px; }
   h2 { font-size: 34px; }
   .explorador { padding-top: 34px; padding-bottom: 26px; }

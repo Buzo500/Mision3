@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 
-// Reutilizable para listas de identificadores. La clave permanece fija al usarlo.
-export default function useLocalStorage(clave) {
+// Reutilizable para listas. La clave permanece fija mientras el componente está montado.
+export default function useLocalStorage(clave, preparar = (lista) => lista) {
   const [valor, setValor] = useState(() => {
     try {
       const guardado = JSON.parse(localStorage.getItem(clave));
-      return Array.isArray(guardado) && guardado.every((id) => typeof id === "string")
-        ? guardado
-        : [];
+      return Array.isArray(guardado) ? preparar(guardado) : [];
     } catch {
       return [];
     }

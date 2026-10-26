@@ -1,4 +1,4 @@
-const PREFIJO_CACHE = "pasaporte:recetas:v1:";
+export const PREFIJO_CACHE = "pasaporte:recetas:v1:";
 
 export function leerCache(busqueda) {
   try {

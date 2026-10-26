@@ -1,6 +1,6 @@
 import Cabecera from "./components/Cabecera.jsx";
 import Portada from "./components/Portada.jsx";
-import ExploradorRecetas from "./components/ExploradorRecetas.jsx";
+import Recetario from "./components/Recetario.jsx";
 import Filosofia from "./components/Filosofia.jsx";
 import Pie from "./components/Pie.jsx";
 
@@ -11,7 +11,7 @@ export default function App() {
       <Cabecera />
       <main id="contenido">
         <Portada />
-        <ExploradorRecetas />
+        <Recetario />
         <Filosofia />
       </main>
       <Pie />
