@@ -267,6 +267,38 @@ test("normaliza favoritas antiguas duplicadas y prioriza sus recetas completas",
   assert.equal(globalThis.fetch.mock.callCount(), 0);
 });
 
+test("cerrar el detalle devuelve el foco a los resultados en las dos vistas", async () => {
+  globalThis.fetch.mock.mockImplementation(async () => respuesta([pasta]));
+  await montar(Recetario);
+  await buscarEnFormulario("pasta");
+  await pulsar("Ver receta: Pasta de prueba");
+  await pulsar("Cerrar receta ↑");
+  assert.equal(contenedor.querySelector(".detalle"), null);
+  assert.equal(document.activeElement.getAttribute("aria-label"), "Resultados de recetas");
+  await pulsar("Favorita: Pasta de prueba");
+  await pulsar("Mis favoritas (1)");
+  await pulsar("Ver receta: Pasta de prueba");
+  await pulsar("Cerrar receta ↑");
+  assert.equal(contenedor.querySelector(".detalle"), null);
+  assert.equal(document.activeElement.getAttribute("aria-label"), "Biblioteca de favoritas");
+});
+
+test("quitar una favorita filtrada cierra su detalle y mantiene el foco visible", async () => {
+  globalThis.fetch.mock.mockImplementation(async () => respuesta([pasta]));
+  await montar(Recetario);
+  await buscarEnFormulario("pasta");
+  await pulsar("Favorita: Pasta de prueba");
+  await act(async () => contenedor.querySelector("input[type=checkbox]").click());
+  await pulsar("Ver receta: Pasta de prueba");
+  await pulsar("Favorita: Pasta de prueba");
+  assert.equal(contenedor.querySelector(".detalle"), null);
+  assert.equal(contenedor.querySelectorAll(".tarjeta-receta").length, 0);
+  assert.equal(document.activeElement.getAttribute("aria-label"), "Resultados de recetas");
+  await act(async () => contenedor.querySelector("input[type=checkbox]").click());
+  assert.equal(contenedor.querySelector(".detalle"), null);
+  assert.equal(contenedor.querySelectorAll(".tarjeta-receta").length, 1);
+});
+
 test("cambiar de sección durante la carga ignora la respuesta pendiente", async () => {
   const pendiente = Promise.withResolvers();
   globalThis.fetch.mock.mockImplementation(() => pendiente.promise);

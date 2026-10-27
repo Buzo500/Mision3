@@ -1,27 +1,14 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import EstadoResultados from "./EstadoResultados.jsx";
-import TarjetaReceta from "./TarjetaReceta.jsx";
-import DetalleReceta from "./DetalleReceta.jsx";
+import ResultadosRecetas from "./ResultadosRecetas.jsx";
 
 export default function BibliotecaFavoritas({ recetas, pendientes, onFavorita }) {
   const [idSeleccionada, setIdSeleccionada] = useState(null);
-  const seleccionada = recetas.find((receta) => receta.id === idSeleccionada);
-  const bibliotecaRef = useRef(null);
-
-  function cerrarDetalle() {
-    setIdSeleccionada(null);
-    bibliotecaRef.current.focus();
-  }
-
-  function quitarFavorita(receta) {
-    onFavorita(receta);
-    if (receta.id === idSeleccionada) setIdSeleccionada(null);
-    // La tarjeta desaparece: devolvemos el foco a un elemento que permanece visible.
-    bibliotecaRef.current.focus();
-  }
+  const idsFavoritas = recetas.map((receta) => receta.id);
 
   return (
-    <div className="zona-resultados" ref={bibliotecaRef} tabIndex={-1} aria-label="Biblioteca de favoritas">
+    <ResultadosRecetas recetas={recetas} favoritas={idsFavoritas} idSeleccionada={idSeleccionada}
+      onSeleccionar={setIdSeleccionada} onFavorita={onFavorita} soloFavoritas={true} etiqueta="Biblioteca de favoritas">
       <div role="status" aria-live="polite">
         <EstadoResultados titulo={recetas.length ? "Tu recetario personal" : "Tu recetario está por empezar"}
           conResultados={recetas.length > 0}>
@@ -34,13 +21,6 @@ export default function BibliotecaFavoritas({ recetas, pendientes, onFavorita })
           {" "}La próxima búsqueda permitirá recuperar las recetas que coincidan.
         </p>}
       </div>
-      {seleccionada && <DetalleReceta receta={seleccionada} onCerrar={cerrarDetalle} />}
-      <div className="recetas">
-        {recetas.map((receta) => (
-          <TarjetaReceta key={receta.id} receta={receta} favorita={true}
-            onFavorita={quitarFavorita} onVer={setIdSeleccionada} />
-        ))}
-      </div>
-    </div>
+    </ResultadosRecetas>
   );
 }
