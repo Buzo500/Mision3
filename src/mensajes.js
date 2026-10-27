@@ -1,3 +1,17 @@
+export function obtenerMensajeFavoritas({ cantidad, pendientes }) {
+  const unidad = cantidad === 1 ? "receta guardada" : "recetas guardadas";
+  const titulo = cantidad > 0 ? "Tu recetario personal" : "Tu recetario está por empezar";
+  const mensaje = cantidad > 0
+    ? `${cantidad} ${unidad} para volver a cocinar. Puedes consultarlas sin repetir la búsqueda.`
+    : "Pulsa «Guardar» en una receta para tenerla siempre aquí, también después de recargar la página.";
+  let avisoPendientes = "";
+  if (pendientes > 0) {
+    const inicio = pendientes === 1 ? "Queda 1 favorita" : `Quedan ${pendientes} favoritas`;
+    avisoPendientes = `${inicio} de la versión anterior sin sus datos. La próxima búsqueda permitirá recuperar las recetas que coincidan.`;
+  }
+  return { titulo, mensaje, avisoPendientes };
+}
+
 export function obtenerMensajeResultados({ estado, busqueda, categoria, soloFavoritas, cantidad }) {
   if (estado === "cargando") {
     return {
