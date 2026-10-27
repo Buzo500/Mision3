@@ -4,6 +4,7 @@ import { act, createElement, StrictMode } from "react";
 import { JSDOM } from "jsdom";
 import { createServer } from "vite";
 import useBuscarRecetas from "../src/hooks/useBuscarRecetas.js";
+import useLocalStorage from "../src/hooks/useLocalStorage.js";
 
 // DOM aislado: estas pruebas no usan Internet ni el almacenamiento del navegador real.
 const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost" });
@@ -26,6 +27,7 @@ const { default: Recetario } = await vite.ssrLoadModule("/src/components/Recetar
 let raiz;
 let contenedor;
 let busquedaActual;
+let almacenamientoActual;
 
 const pasta = { idMeal: "1", strMeal: "Pasta de prueba", strCategory: "Pasta", strInstructions: "Cocer y servir.", strIngredient1: "Tomato", strMeasure1: "2" };
 const tarta = { idMeal: "2", strMeal: "Tarta de prueba", strCategory: "Dessert", strInstructions: "Hornear." };
@@ -36,8 +38,13 @@ function SondaBusqueda() {
   return createElement("p", null, busquedaActual.estado);
 }
 
-async function montar(componente) {
-  await act(async () => raiz.render(createElement(StrictMode, null, createElement(componente))));
+function SondaAlmacenamiento({ clave, inicial, preparar }) {
+  almacenamientoActual = useLocalStorage(clave, inicial, preparar);
+  return null;
+}
+
+async function montar(componente, props = {}) {
+  await act(async () => raiz.render(createElement(StrictMode, null, createElement(componente, props))));
 }
 
 function boton(nombre) {
@@ -82,6 +89,47 @@ after(async () => {
     else delete globalThis[nombre];
   }
   delete globalThis.IS_REACT_ACT_ENVIRONMENT;
+});
+
+test("el almacenamiento admite objetos, listas, texto, cero, false y null sin reescribir al montar", async () => {
+  const valores = [{ tema: "claro" }, ["1"], "texto", 0, false, null];
+  valores.forEach((valor, indice) => localStorage.setItem(`prueba:${indice}`, JSON.stringify(valor)));
+  const escritura = mock.method(dom.window.Storage.prototype, "setItem");
+  for (const [indice, valor] of valores.entries()) {
+    await montar(SondaAlmacenamiento, { key: indice, clave: `prueba:${indice}`, inicial: "por defecto" });
+    assert.deepEqual(almacenamientoActual[0], valor);
+  }
+  assert.equal(escritura.mock.callCount(), 0);
+});
+
+test("el valor inicial y las actualizaciones funcionales se guardan una vez en StrictMode", async () => {
+  const escritura = mock.method(dom.window.Storage.prototype, "setItem");
+  await montar(SondaAlmacenamiento, { clave: "contador", inicial: 0 });
+  assert.equal(escritura.mock.callCount(), 1);
+  await act(async () => {
+    almacenamientoActual[1]((anterior) => anterior + 1);
+    almacenamientoActual[1]((anterior) => anterior + 1);
+  });
+  assert.equal(almacenamientoActual[0], 2);
+  assert.equal(localStorage.getItem("contador"), "2");
+  assert.equal(escritura.mock.callCount(), 2);
+});
+
+test("una migración sí se persiste aunque ocurra en el primer montaje", async () => {
+  localStorage.setItem("preferencias", JSON.stringify("claro"));
+  const escritura = mock.method(dom.window.Storage.prototype, "setItem");
+  await montar(SondaAlmacenamiento, { clave: "preferencias", inicial: {}, preparar: (tema) => ({ tema }) });
+  assert.deepEqual(almacenamientoActual[0], { tema: "claro" });
+  assert.deepEqual(JSON.parse(localStorage.getItem("preferencias")), { tema: "claro" });
+  assert.equal(escritura.mock.callCount(), 1);
+});
+
+test("el almacenamiento ilegible permite usar y actualizar el valor inicial en memoria", async () => {
+  mock.method(dom.window.Storage.prototype, "getItem", () => { throw new Error("Acceso bloqueado"); });
+  mock.method(console, "warn", () => {});
+  await montar(SondaAlmacenamiento, { clave: "preferencias", inicial: { tema: "claro" } });
+  await act(async () => almacenamientoActual[1]({ tema: "oscuro" }));
+  assert.deepEqual(almacenamientoActual[0], { tema: "oscuro" });
 });
 
 test("una respuesta antigua no sustituye al resultado de la última búsqueda", async () => {

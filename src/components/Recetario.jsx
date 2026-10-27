@@ -6,7 +6,7 @@ import BibliotecaFavoritas from "./BibliotecaFavoritas.jsx";
 
 export default function Recetario() {
   const [vista, setVista] = useState("buscar");
-  const [favoritas, setFavoritas] = useLocalStorage("pasaporte:favoritas:v1", prepararFavoritas);
+  const [favoritas, setFavoritas] = useLocalStorage("pasaporte:favoritas:v1", [], prepararFavoritas);
   const idsFavoritas = favoritas.map(idDeFavorita);
   const recetasGuardadas = favoritas.filter((receta) => typeof receta !== "string");
 

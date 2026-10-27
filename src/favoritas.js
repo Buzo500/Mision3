@@ -21,6 +21,7 @@ export function completarFavoritas(favoritas, recetas) {
 }
 
 export function prepararFavoritas(guardadas) {
+  if (!Array.isArray(guardadas)) return [];
   const favoritas = [];
   for (const guardada of guardadas) {
     const id = typeof guardada === "string" ? guardada : guardada?.id;
