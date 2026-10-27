@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, beforeEach, mock, test } from "node:test";
 import { buscarRecetas } from "../src/api.js";
 import { guardarCache, leerCache } from "../src/cache.js";
+import { BIBLIOTECA_INICIAL, completarBiblioteca, prepararBiblioteca } from "../src/favoritas.js";
 import { filtrarPorCategoria, prepararRecetas, resumirCategorias } from "../src/logica.js";
 
 const almacenamientoOriginal = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
@@ -75,6 +76,33 @@ test("el filtro y el resumen derivan los resultados sin cambiar las recetas", ()
   assert.deepEqual(resumirCategorias(recetas), esperado);
   assert.deepEqual(resumirCategorias(recetas), esperado);
   assert.deepEqual(resumirCategorias([]), []);
+});
+
+test("preparar la biblioteca conserva recetas válidas, elimina duplicados y descarta datos dañados", () => {
+  const [receta] = prepararRecetas([{ idMeal: "1" }]);
+  const guardado = {
+    recetas: [receta, receta, { id: "3" }, { ...receta, id: "4", ingredientes: [null] }, null],
+    pendientes: ["1", "2", " 2 ", "", null, 5],
+  };
+  mock.method(localStorage, "getItem", () => { throw new Error("No debe consultar el almacenamiento"); });
+
+  assert.deepEqual(prepararBiblioteca(guardado), { recetas: [receta], pendientes: ["2"] });
+  for (const valor of [null, {}, "texto", { recetas: {}, pendientes: 1 }]) {
+    assert.deepEqual(prepararBiblioteca(valor), BIBLIOTECA_INICIAL);
+  }
+});
+
+test("completar recupera solo IDs pendientes, sin duplicar recetas ni modificar la biblioteca original", () => {
+  const [primera, segunda, tercera] = prepararRecetas([{ idMeal: "1" }, { idMeal: "2" }, { idMeal: "3" }]);
+  const biblioteca = Object.freeze({
+    recetas: Object.freeze([primera]),
+    pendientes: Object.freeze(["2", "4"]),
+  });
+
+  assert.equal(completarBiblioteca(biblioteca, [tercera]), biblioteca);
+  const completada = completarBiblioteca(biblioteca, [primera, segunda, segunda, tercera]);
+  assert.deepEqual(completada, { recetas: [primera, segunda], pendientes: ["4"] });
+  assert.equal(completarBiblioteca(completada, [segunda]), completada);
 });
 
 test("la caché distingue una búsqueda vacía de una búsqueda no guardada", () => {

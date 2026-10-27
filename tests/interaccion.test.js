@@ -231,22 +231,28 @@ test("las favoritas conservan ingredientes y detalle tras recargar, sin búsqued
   assert.equal(JSON.parse(localStorage.getItem("pasaporte:favoritas:v1")).recetas[0].id, "2");
 });
 
-test("recupera los IDs antiguos desde la caché y conserva los que faltan", async () => {
+test("conserva los IDs antiguos tras recargar y los completa al buscar", async () => {
   localStorage.setItem("pasaporte:favoritas:v1", JSON.stringify(["1", "2", "1", null, {}]));
   localStorage.setItem("pasaporte:recetas:v1:pasta", JSON.stringify([pasta]));
   await montar(Recetario);
   await pulsar("Mis favoritas (2)");
-  assert.equal(contenedor.querySelectorAll(".tarjeta-receta").length, 1);
-  assert.match(contenedor.querySelector(".aviso-favoritas").textContent, /Queda 1 favorita/);
+  assert.equal(contenedor.querySelectorAll(".tarjeta-receta").length, 0);
+  assert.match(contenedor.querySelector(".aviso-favoritas").textContent, /Quedan 2 favoritas/);
   const guardado = JSON.parse(localStorage.getItem("pasaporte:favoritas:v1"));
-  assert.deepEqual(guardado.pendientes, ["2"]);
-  assert.deepEqual(guardado.recetas.map((receta) => receta.id), ["1"]);
+  assert.deepEqual(guardado.pendientes, ["1", "2"]);
+  assert.deepEqual(guardado.recetas, []);
   await act(async () => raiz.unmount());
   raiz = createRoot(contenedor);
   await montar(Recetario);
   await pulsar("Mis favoritas (2)");
-  assert.match(contenedor.querySelector(".aviso-favoritas").textContent, /Queda 1 favorita/);
+  assert.match(contenedor.querySelector(".aviso-favoritas").textContent, /Quedan 2 favoritas/);
   globalThis.fetch.mock.mockImplementation(async () => respuesta([tarta]));
+  await pulsar("Buscar recetas");
+  await buscarEnFormulario("pasta");
+  assert.equal(globalThis.fetch.mock.callCount(), 0);
+  await pulsar("Mis favoritas (2)");
+  assert.equal(contenedor.querySelectorAll(".tarjeta-receta").length, 1);
+  assert.match(contenedor.querySelector(".aviso-favoritas").textContent, /Queda 1 favorita/);
   await pulsar("Buscar recetas");
   await buscarEnFormulario("cake");
   await pulsar("Mis favoritas (2)");
@@ -257,7 +263,7 @@ test("recupera los IDs antiguos desde la caché y conserva los que faltan", asyn
 
 test("normaliza favoritas antiguas duplicadas y prioriza sus recetas completas", async () => {
   const [receta] = prepararRecetas([pasta]);
-  localStorage.setItem("pasaporte:favoritas:v1", JSON.stringify(["1", receta, receta, { id: "2" }, null]));
+  localStorage.setItem("pasaporte:favoritas:v1", JSON.stringify(["1", receta, receta, "2", { id: "3" }, null]));
   await montar(Recetario);
   await pulsar("Mis favoritas (2)");
   const guardado = JSON.parse(localStorage.getItem("pasaporte:favoritas:v1"));
