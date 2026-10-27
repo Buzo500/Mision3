@@ -13,7 +13,28 @@ npm ci
 npm run dev
 ```
 
-Abrir la dirección que indique Vite y buscar un nombre en inglés, como `cake` o `chicken`. Para comprobar las favoritas, guardar una receta, recargar y repetir la búsqueda. `npm run check` ejecuta la revisión de código, las pruebas y la compilación.
+Abrir la dirección que indique Vite y buscar un plato en inglés, como chicken, cake o Arrabiata.
+
+Para comprobar las funciones principales:
+
+1. Buscar una receta y abrir su detalle.
+
+2. Filtrar los resultados por categoría.
+
+3. Guardar una receta y activar «Solo favoritas de esta búsqueda».
+
+4. Recargar la página y entrar en «Mis favoritas»: la receta debe seguir disponible sin repetir la búsqueda.
+
+5. Abrir su detalle y quitarla de favoritas.
+
+Para ejecutar las comprobaciones automáticas:
+
+
+```sh
+npm run check
+```
+
+Este comando ejecuta ESLint, las 28 pruebas y la compilación de producción. Las pruebas cubren la preparación de datos, la caché, los errores de búsqueda, las respuestas fuera de orden, la persistencia, la recuperación de favoritas antiguas y la gestión del foco.
 
 ## Uso de IA
 
@@ -27,6 +48,6 @@ Prompt: "Crees que es viable pasar esta app a React o debería cambiar el progra
 
 ## Autopsia
 
-1. **Buscar solo al enviar el formulario.** La consulta se hace desde `onSubmit` y los controles se deshabilitan mientras carga. La alternativa era buscar en cada pulsación, pero habría requerido controlar más peticiones y respuestas que pueden llegar fuera de orden. Se eligió el envío explícito por su sencillez; como contrapartida, no hay resultados mientras se escribe. El filtrado por categoría se calcula con los datos recibidos y no necesita otra petición ni un efecto.
+1. Buscar al enviar el formulario. La consulta se inicia desde onSubmit; los filtros se calculan sobre los resultados recibidos. Se descartó buscar con cada pulsación para mantener una interacción sencilla y evitar peticiones innecesarias. Como contrapartida, no hay resultados mientras se escribe. El hook useBuscarRecetas utiliza un contador para ignorar respuestas antiguas e invalidar las pendientes cuando el componente se desmonta.
 
-2. **Guardar solo los identificadores de las favoritas.** El hook `useLocalStorage` conserva una lista de IDs y las tarjetas comprueban si su receta pertenece a ella. Se descartó guardar las recetas completas para evitar duplicar sus datos y mantener pequeño el estado. La limitación es que las favoritas se muestran dentro de la búsqueda actual: después de recargar hay que volver a buscar, porque no existe una biblioteca independiente de recetas guardadas.
+2. Guardar las recetas completas como favoritas. Esto permite abrir sus ingredientes y preparación desde una biblioteca independiente después de recargar. Se descartó conservar únicamente los IDs porque haría depender el detalle de otra consulta o de la caché. La contrapartida es ocupar más espacio en localStorage. Las recetas completas mantienen un formato uniforme; los IDs antiguos que aún no se han podido recuperar se conservan por separado.
