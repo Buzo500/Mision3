@@ -19,7 +19,7 @@ export default function TarjetaReceta({ receta, favorita, onFavorita, onVer }) {
           Ver receta <span aria-hidden="true">↗</span>
         </button>
         <button className="boton-favorita" type="button" aria-pressed={favorita}
-          aria-label={`Favorita: ${receta.nombre}`} onClick={() => onFavorita(receta.id)}>
+          aria-label={`Favorita: ${receta.nombre}`} onClick={() => onFavorita(receta)}>
           <span aria-hidden="true">{favorita ? "♥" : "♡"}</span> {favorita ? "Guardada" : "Guardar"}
         </button>
       </div>

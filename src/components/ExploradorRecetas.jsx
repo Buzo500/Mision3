@@ -70,7 +70,7 @@ export default function ExploradorRecetas({ favoritas, onFavorita, onRecetasEnco
         <div className="recetas">
           {visibles.map((receta) => (
             <TarjetaReceta key={receta.id} receta={receta} favorita={favoritas.includes(receta.id)}
-              onFavorita={() => onFavorita(receta)} onVer={(id) => cambiarFiltros({ idSeleccionada: id })} />
+              onFavorita={onFavorita} onVer={(id) => cambiarFiltros({ idSeleccionada: id })} />
           ))}
         </div>
       </div>

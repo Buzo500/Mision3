@@ -38,7 +38,7 @@ export default function BibliotecaFavoritas({ recetas, pendientes, onFavorita })
       <div className="recetas">
         {recetas.map((receta) => (
           <TarjetaReceta key={receta.id} receta={receta} favorita={true}
-            onFavorita={() => quitarFavorita(receta)} onVer={setIdSeleccionada} />
+            onFavorita={quitarFavorita} onVer={setIdSeleccionada} />
         ))}
       </div>
     </div>
