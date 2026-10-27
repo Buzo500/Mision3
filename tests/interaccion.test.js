@@ -5,6 +5,7 @@ import { JSDOM } from "jsdom";
 import { createServer } from "vite";
 import useBuscarRecetas from "../src/hooks/useBuscarRecetas.js";
 import useLocalStorage from "../src/hooks/useLocalStorage.js";
+import { prepararRecetas } from "../src/logica.js";
 
 // DOM aislado: estas pruebas no usan Internet ni el almacenamiento del navegador real.
 const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost" });
@@ -212,7 +213,7 @@ test("las favoritas conservan ingredientes y detalle tras recargar, sin búsqued
   await buscarEnFormulario("pasta");
   await pulsar("Favorita: Pasta de prueba");
   await pulsar("Favorita: Tarta de prueba");
-  assert.equal(JSON.parse(localStorage.getItem("pasaporte:favoritas:v1"))[0].ingredientes[0].nombre, "Tomato");
+  assert.equal(JSON.parse(localStorage.getItem("pasaporte:favoritas:v1")).recetas[0].ingredientes[0].nombre, "Tomato");
   await act(async () => raiz.unmount());
   raiz = createRoot(contenedor);
   await montar(Recetario);
@@ -227,7 +228,7 @@ test("las favoritas conservan ingredientes y detalle tras recargar, sin búsqued
   assert.equal(document.activeElement.getAttribute("aria-label"), "Biblioteca de favoritas");
   assert.equal(contenedor.querySelectorAll(".tarjeta-receta").length, 1);
   assert.equal(globalThis.fetch.mock.callCount(), 1);
-  assert.equal(JSON.parse(localStorage.getItem("pasaporte:favoritas:v1"))[0].id, "2");
+  assert.equal(JSON.parse(localStorage.getItem("pasaporte:favoritas:v1")).recetas[0].id, "2");
 });
 
 test("recupera los IDs antiguos desde la caché y conserva los que faltan", async () => {
@@ -237,13 +238,33 @@ test("recupera los IDs antiguos desde la caché y conserva los que faltan", asyn
   await pulsar("Mis favoritas (2)");
   assert.equal(contenedor.querySelectorAll(".tarjeta-receta").length, 1);
   assert.match(contenedor.querySelector(".aviso-favoritas").textContent, /Queda 1 favorita/);
-  assert.equal(JSON.parse(localStorage.getItem("pasaporte:favoritas:v1"))[1], "2");
+  const guardado = JSON.parse(localStorage.getItem("pasaporte:favoritas:v1"));
+  assert.deepEqual(guardado.pendientes, ["2"]);
+  assert.deepEqual(guardado.recetas.map((receta) => receta.id), ["1"]);
+  await act(async () => raiz.unmount());
+  raiz = createRoot(contenedor);
+  await montar(Recetario);
+  await pulsar("Mis favoritas (2)");
+  assert.match(contenedor.querySelector(".aviso-favoritas").textContent, /Queda 1 favorita/);
   globalThis.fetch.mock.mockImplementation(async () => respuesta([tarta]));
   await pulsar("Buscar recetas");
   await buscarEnFormulario("cake");
   await pulsar("Mis favoritas (2)");
   assert.equal(contenedor.querySelectorAll(".tarjeta-receta").length, 2);
   assert.equal(contenedor.querySelector(".aviso-favoritas"), null);
+  assert.deepEqual(JSON.parse(localStorage.getItem("pasaporte:favoritas:v1")).pendientes, []);
+});
+
+test("normaliza favoritas antiguas duplicadas y prioriza sus recetas completas", async () => {
+  const [receta] = prepararRecetas([pasta]);
+  localStorage.setItem("pasaporte:favoritas:v1", JSON.stringify(["1", receta, receta, { id: "2" }, null]));
+  await montar(Recetario);
+  await pulsar("Mis favoritas (2)");
+  const guardado = JSON.parse(localStorage.getItem("pasaporte:favoritas:v1"));
+  assert.deepEqual(guardado.recetas, [receta]);
+  assert.deepEqual(guardado.pendientes, ["2"]);
+  assert.equal(contenedor.querySelectorAll(".tarjeta-receta").length, 1);
+  assert.equal(globalThis.fetch.mock.callCount(), 0);
 });
 
 test("cambiar de sección durante la carga ignora la respuesta pendiente", async () => {

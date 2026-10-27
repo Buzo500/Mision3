@@ -1,23 +1,27 @@
 import { useState } from "react";
 import useLocalStorage from "../hooks/useLocalStorage.js";
-import { completarFavoritas, idDeFavorita, prepararFavoritas } from "../favoritas.js";
+import { BIBLIOTECA_INICIAL, completarBiblioteca, prepararBiblioteca } from "../favoritas.js";
 import ExploradorRecetas from "./ExploradorRecetas.jsx";
 import BibliotecaFavoritas from "./BibliotecaFavoritas.jsx";
 
 export default function Recetario() {
   const [vista, setVista] = useState("buscar");
-  const [favoritas, setFavoritas] = useLocalStorage("pasaporte:favoritas:v1", [], prepararFavoritas);
-  const idsFavoritas = favoritas.map(idDeFavorita);
-  const recetasGuardadas = favoritas.filter((receta) => typeof receta !== "string");
+  const [biblioteca, setBiblioteca] = useLocalStorage("pasaporte:favoritas:v1", BIBLIOTECA_INICIAL, prepararBiblioteca);
+  const { recetas: favoritas, pendientes } = biblioteca;
+  const idsFavoritas = favoritas.map((receta) => receta.id);
+  const totalFavoritas = favoritas.length + pendientes.length;
 
   function alternarFavorita(receta) {
-    setFavoritas((anteriores) => anteriores.some((guardada) => idDeFavorita(guardada) === receta.id)
-      ? anteriores.filter((guardada) => idDeFavorita(guardada) !== receta.id)
-      : [...anteriores, receta]);
+    setBiblioteca((anterior) => ({
+      recetas: anterior.recetas.some((guardada) => guardada.id === receta.id)
+        ? anterior.recetas.filter((guardada) => guardada.id !== receta.id)
+        : [...anterior.recetas, receta],
+      pendientes: anterior.pendientes.filter((id) => id !== receta.id),
+    }));
   }
 
   function recuperarFavoritas(recetas) {
-    setFavoritas((anteriores) => completarFavoritas(anteriores, recetas));
+    setBiblioteca((anterior) => completarBiblioteca(anterior, recetas));
   }
 
   return (
@@ -29,13 +33,13 @@ export default function Recetario() {
       <div className="vistas-recetario" role="group" aria-label="Secciones del recetario">
         <button type="button" aria-pressed={vista === "buscar"} onClick={() => setVista("buscar")}>Buscar recetas</button>
         <button type="button" aria-pressed={vista === "favoritas"} onClick={() => setVista("favoritas")}>
-          Mis favoritas ({favoritas.length})
+          Mis favoritas ({totalFavoritas})
         </button>
       </div>
       {vista === "buscar" ? (
         <ExploradorRecetas favoritas={idsFavoritas} onFavorita={alternarFavorita} onRecetasEncontradas={recuperarFavoritas} />
       ) : (
-        <BibliotecaFavoritas recetas={recetasGuardadas} pendientes={favoritas.length - recetasGuardadas.length}
+        <BibliotecaFavoritas recetas={favoritas} pendientes={pendientes.length}
           onFavorita={alternarFavorita} />
       )}
     </section>

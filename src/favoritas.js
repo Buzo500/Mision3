@@ -1,9 +1,7 @@
 import { leerCache, PREFIJO_CACHE } from "./cache.js";
 import { prepararRecetas } from "./logica.js";
 
-export function idDeFavorita(favorita) {
-  return typeof favorita === "string" ? favorita : favorita.id;
-}
+export const BIBLIOTECA_INICIAL = { recetas: [], pendientes: [] };
 
 function esRecetaCompleta(receta) {
   return ["id", "nombre", "categoria", "origen", "imagen", "instrucciones"]
@@ -13,26 +11,44 @@ function esRecetaCompleta(receta) {
       && ["id", "nombre", "cantidad"].every((campo) => typeof ingrediente[campo] === "string"));
 }
 
-export function completarFavoritas(favoritas, recetas) {
-  // Los IDs antiguos se conservan hasta encontrar los datos de su receta.
-  return favoritas.map((favorita) => typeof favorita === "string"
-    ? recetas.find((receta) => receta.id === favorita) ?? favorita
-    : favorita);
+export function completarBiblioteca(biblioteca, encontradas) {
+  const recuperadas = biblioteca.pendientes
+    .map((id) => encontradas.find((receta) => receta.id === id))
+    .filter(Boolean);
+  if (recuperadas.length === 0) return biblioteca;
+
+  return {
+    recetas: [...biblioteca.recetas, ...recuperadas],
+    pendientes: biblioteca.pendientes.filter((id) => !recuperadas.some((receta) => receta.id === id)),
+  };
 }
 
-export function prepararFavoritas(guardadas) {
-  if (!Array.isArray(guardadas)) return [];
-  const favoritas = [];
-  for (const guardada of guardadas) {
-    const id = typeof guardada === "string" ? guardada : guardada?.id;
-    if (typeof id !== "string" || !id.trim() || favoritas.some((receta) => idDeFavorita(receta) === id)) continue;
-    favoritas.push(typeof guardada === "object" && esRecetaCompleta(guardada) ? guardada : id);
+export function prepararBiblioteca(guardado) {
+  // Solo la lectura admite el formato antiguo. Las vistas reciben recetas completas.
+  const registros = Array.isArray(guardado) ? guardado : [
+    ...(Array.isArray(guardado?.recetas) ? guardado.recetas : []),
+    ...(Array.isArray(guardado?.pendientes) ? guardado.pendientes : []),
+  ];
+  const recetas = [];
+  const idsAntiguos = [];
+  for (const registro of registros) {
+    const valorId = typeof registro === "string" ? registro : registro?.id;
+    if (typeof valorId !== "string" || !valorId.trim()) continue;
+    const id = valorId.trim();
+    if (typeof registro === "object" && esRecetaCompleta(registro)) {
+      if (!recetas.some((receta) => receta.id === id)) recetas.push({ ...registro, id });
+    } else if (!idsAntiguos.includes(id)) {
+      idsAntiguos.push(id);
+    }
   }
+  const biblioteca = {
+    recetas,
+    pendientes: idsAntiguos.filter((id) => !recetas.some((receta) => receta.id === id)),
+  };
+  if (biblioteca.pendientes.length === 0) return biblioteca;
 
-  if (favoritas.every((receta) => typeof receta !== "string")) return favoritas;
   const recetasAnteriores = [];
   try {
-    // La versión anterior guardaba solo IDs: recuperamos sus datos de la caché disponible.
     for (let indice = 0; indice < localStorage.length; indice += 1) {
       const clave = localStorage.key(indice);
       if (clave?.startsWith(PREFIJO_CACHE)) {
@@ -40,7 +56,7 @@ export function prepararFavoritas(guardadas) {
       }
     }
   } catch {
-    // Si no se puede leer la caché, los IDs siguen guardados para otra búsqueda.
+    // Los IDs que no se recuperen quedan aparte y sobreviven a las recargas.
   }
-  return completarFavoritas(favoritas, recetasAnteriores);
+  return completarBiblioteca(biblioteca, recetasAnteriores);
 }
